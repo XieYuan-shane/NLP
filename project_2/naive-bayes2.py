@@ -10,21 +10,23 @@ def preprocess(inputfile, outputfile):
     #   Use NLTK.word_tokenize() to tokenize the sentence
     #   Use nltk.PorterStemmer to stem the words
     preprocessed = []
-    stemmer = nltk.PorterStemmer()
+    stemmer = nltk.PorterStemmer()#词干提取
     with open(inputfile, 'r') as file:
-        raw_file = json.load(file)
+        raw_file = json.load(file)#json文件的导入
         for article in raw_file:
             id = ""
             for char in article[0]:
                 if char.isdigit():
                     id += char
             words_raw = nltk.word_tokenize(article[2])
-            words = [token.lower() for token in words_raw if token.isalnum()]
-            word_processed = [stemmer.stem(word) for word in words]
+            words = [token.lower() for token in words_raw if token.isalnum()]#这个函数表示token是全字母或者全数字则返回true
+            word_processed = [stemmer.stem(word) for word in words]#词干提取
             preprocessed_article = [id, article[1], word_processed]
             preprocessed.append(preprocessed_article)
         with open(outputfile, 'w') as file:
             json.dump(preprocessed, file)
+            file.close()
+    file.close()
     return
 
 def count_word(inputfile, outputfile):
@@ -38,7 +40,7 @@ def count_word(inputfile, outputfile):
         for article in raw_file:
             article_categories = -1
             for i in range(5):
-                if article[1] == categories[i]:
+                if article[1] == categories[i]:#通过这个flag来判断category
                     article_categories = i
                     break
             if (article_categories == -1):
@@ -50,7 +52,7 @@ def count_word(inputfile, outputfile):
                     word_count[word] = [0, 0, 0, 0, 0]
                 word_count[word][article_categories] += 1
         with open(outputfile, 'w') as file:
-            file.write(' '.join(str(num) for num in categories_count))
+            file.write(' '.join(str(num) for num in categories_count))#join函数已经在笔记由
             file.write('\n')
             for key, values in word_count.items():
                 file.write(key)

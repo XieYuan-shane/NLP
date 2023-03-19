@@ -1,0 +1,4 @@
+如果对字典进行排序，常用的形式如下：sorted(dict.items(), key=lambda e:e[1], reverse=True)， 
+其中e表示dict.items()中的一个元素，e[1]则表示按 值排序如果把e[1]改成e[0]，
+也就是说e[1]为值，e[0]为key
+那么则是按键排序，reverse=False可以省略，默认为升序排列。
