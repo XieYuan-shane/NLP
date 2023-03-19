@@ -86,7 +86,7 @@ def f1_score(testset,classification_result):
                             FN[0]+=1    
                 else:
                     break
-        
+        F1 = [0,0,0,0,0]
         for i in range(5):
             P[i] = TP[i]/(TP[i]+FP[i])
             R[i] = TP[i]/(TP[i]+FN[i])
@@ -96,5 +96,5 @@ def f1_score(testset,classification_result):
         
     return F1
 if __name__ == '__main__':
-    F1 = f1_score('test_test.json','classification_result.txt')
+    F1 = f1_score('test.preprocessed.json','classification_result.txt')
     print(F1)

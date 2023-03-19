@@ -37,27 +37,17 @@ def preprocess(inputfile,outputfile):
     #   Convert all letters to the lowercase
     #   Use NLTK.word_tokenize() to tokenize the sentence
     #   Use nltk.PorterStemmer to stem the words
-    with open(outputfile,'a') as output:
-        with open(inputfile,'r') as input:
-        #将json文件打开并转化为列表+字典
-            file_contents = json.load(input) 
-            #  print(file_contents2[1][2])
-            length = len(file_contents)
-            tokenizer = RegexpTokenizer(r"[a-z]+(?:[-.'][a-z]+)?")
-            porter_stemmer = PorterStemmer()   # 词干提取
-            #  print(length)
-            #  因为是多重列表，这里进行lower（）
-            for i in range(length):
-                for j in range(len(file_contents[0])):
-                    file_contents[i][j] = file_contents[i][j].lower() 
-            #  这里进行数据处理
-            for i in range(length):     
-                file_contents[i][2] = tokenizer.tokenize(file_contents[i][2])
-                for j in range(len(file_contents[i][2])):
-                    file_contents[i][2][j] = porter_stemmer.stem(file_contents[i][2][j])
-            json.dump(file_contents,output)
-    input.close()
-    output.close()
+    stemmer = nltk.PorterStemmer()
+    with open(inputfile, 'r') as input:
+        raw_file = json.load(input)
+        for article in raw_file:
+            article[2] = nltk.word_tokenize(article[2])
+            words = [token.lower() for token in article[2] if token.isalnum()]#token.isalnum()如果 string 至少有一个字符并且所有字符都是字母或数字则返回 True,否则返回 False
+            article[2] = [stemmer.stem(word) for word in words] # 词干提取
+        with open(outputfile, 'w') as output:
+            json.dump(raw_file, output)
+        input.close()
+        output.close()
     return
 def count_word(inputfile,outputfile):
     #TODO: count the words from the corpus, and output the result to the output file in the format required.
@@ -67,40 +57,37 @@ def count_word(inputfile,outputfile):
     with open(inputfile,'r') as input:
         file_contents = json.load(input) 
         crude_count = {}
-        all1 = 0
         grain_count = {}
-        all2 = 0
         money_count = {}
-        all3 = 0
         acq_count = {}
-        all4 = 0
         earn_count = {}
-        all5 = 0
+        all = [0,0,0,0,0]
+
         for i in range(0, len(file_contents)):
             if file_contents[i][1] == 'crude':
+                all[0] += 1
                 for crude_key in file_contents[i][2]:
                         crude_count[crude_key] = crude_count.get(crude_key, 0) + 1
-                        all1 = all1 + 1
             if file_contents[i][1] == 'grain':
+                all[1] += 1
                 for grain_key in file_contents[i][2]:
                         grain_count[grain_key] = grain_count.get(grain_key, 0) + 1
-                        all2 = all2 + 1
             if file_contents[i][1] == 'money-fx':
+                all[2] += 1
                 for money_key in file_contents[i][2]:
                         money_count[money_key] = money_count.get(money_key, 0) + 1
-                        all3 = all3 + 1
             if file_contents[i][1] == 'acq':
+                all[3] += 1
                 for acq_key in file_contents[i][2]:
                         acq_count[acq_key] = acq_count.get(acq_key, 0) + 1
-                        all4 = all4 + 1
             if file_contents[i][1] == 'earn':
+                all[4] += 1
                 for earn_key in file_contents[i][2]:
-                        earn_count[earn_key] = earn_count.get(earn_key, 0) + 1 
-                        all5 = all5 + 1   
-        all_count = dict(Counter(crude_count)+Counter(grain_count)+Counter(money_count)+Counter(acq_count)+Counter(earn_count))         
+                        earn_count[earn_key] = earn_count.get(earn_key, 0) + 1   
+        all_count = dict(Counter(crude_count)+Counter(grain_count)+Counter(money_count)+Counter(acq_count)+Counter(earn_count))
         with open(outputfile, 'a') as output:
             output.write("Word_count.txt:\n")
-            output.write("{} {} {} {} {}\n".format(all1,all2,all3,all4,all5))
+            output.write("{} {} {} {} {}\n".format(all[0],all[1],all[2],all[3],all[4]))
             for j in all_count.keys():
                 output.write("{} {} {} {} {} {}\n".format(j,crude_count.get(j, 0),grain_count.get(j, 0),money_count.get(j, 0),
                                                     acq_count.get(j, 0),earn_count.get(j, 0)) )   
@@ -160,32 +147,38 @@ def calculate_probability(word_count,word_dict,outputfile):
     #TODO: Calculate the posterior probability of each feature word, and the prior probability of the class.
     #   Output the result to the output file in the format required
     #   Use 'word_count.txt' and ‘word_dict.txt’ jointly.
-     with open(word_dict,'r') as input:
-        with open(outputfile,'w') as output:
-            output.write("word_probability.txt:\n")
-            input.readline()
-            line1 = input.readline()
-            line1 = line1.replace("\n", '') #去除每一行末尾的换行符
-            x = line1.split(' ')
-            for i in range(0,5):
-                x[i] = int(x[i])#拆分文本出来的是字符，要转为整型  
-            all = x[0] + x[1] + x[2] + x[3] + x[4]
-            output.write("{} {} {} {} {}\n".format(x[0]/all, x[1]/all, x[2]/all, x[3]/all, x[4]/all))
-            while True:
-                line_other = input.readline()
-                if line_other:
-                    line_other = line_other.replace("\n", '') #去除每一行末尾的换行符
-                    y = line_other.split(' ')
-                    for i in range(1,6):
-                       y[i] = int(y[i])#拆分文本出来的是字符，要转为整型
-                    #在这里add1 smooth
-                    output.write("{} {} {} {} {} {}\n".format(y[0], (y[1]+1)/(x[0]+10000), (y[2]+1)/(x[1]+10000), 
-                                                                (y[3]+1)/(x[2]+10000), (y[4]+1)/(x[3]+10000),(y[5]+1)/(x[4]+10000)))
-                else:
-                    break
-        input.close()
-        output.close()
-        return
+    with open(word_dict,'r') as input1:
+        with open(word_count,'r') as input2:
+            with open(outputfile,'w') as output:
+                output.write("word_probability.txt:\n")
+                input2.readline()
+                line1 = input2.readline()
+                line1 = line1.replace("\n", '') #去除每一行末尾的换行符
+                x = line1.split(' ')
+                for i in range(0,5):
+                    x[i] = int(x[i])#拆分文本出来的是字符，要转为整型  
+                all = x[0] + x[1] + x[2] + x[3] + x[4]
+                output.write("{} {} {} {} {}\n".format(x[0]/all, x[1]/all, x[2]/all, x[3]/all, x[4]/all))
+                input1.readline()
+                first_line = input1.readline()
+                first_line = first_line.replace("\n", '') #去除每一行末尾的换行符
+                a = [int(z) for z in first_line.strip().split()]
+                while True:
+                    line_other = input1.readline()
+                    if line_other:
+                        line_other = line_other.replace("\n", '') #去除每一行末尾的换行符
+                        y = line_other.split(' ')
+                        for i in range(1,6):
+                            y[i] = int(y[i])#拆分文本出来的是字符，要转为整型
+                        #在这里add1 smooth
+                        output.write("{} {} {} {} {} {}\n".format(y[0], (y[1]+1)/(a[0]+10000), (y[2]+1)/(a[1]+10000), 
+                                                                    (y[3]+1)/(a[2]+10000), (y[4]+1)/(a[3]+10000),(y[5]+1)/(a[4]+10000)))
+                    else:
+                        break
+    input1.close()
+    input2.close()
+    output.close()
+    return
 def classify(probability,testset,outputfile):
     #TODO: Implement the naïve Bayes classifier to assign class labels to the documents in the test set.
     #   Output the result to the output file in the format required
@@ -304,12 +297,15 @@ def f1_score(testset,classification_result):
                             FN[0]+=1    
                 else:
                     break
+        F1=[0,0,0,0,0]
         for i in range(5):
             P[i] = TP[i]/(TP[i]+FP[i])
             R[i] = TP[i]/(TP[i]+FN[i])
+        
         P_ave = (P[0]+P[1]+P[2]+P[3]+P[4])/5
         R_ave = (R[0]+R[1]+R[2]+R[3]+R[4])/5
         F1 = (2*P_ave*R_ave)/(P_ave+R_ave)
+        
         
     return F1
 def main():
